@@ -65,7 +65,7 @@ spec:
             failureThreshold: 3
           resources:
             requests: {cpu: 100m, memory: 512Mi}
-            limits: {cpu: '1', memory: 2Gi}
+            limits: {cpu: '1500m', memory: 2Gi}
           volumeMounts:
             - {name: chain-data, mountPath: /data}
   volumeClaimTemplates:
