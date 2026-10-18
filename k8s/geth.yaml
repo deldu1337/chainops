@@ -29,6 +29,7 @@ spec:
     metadata:
       labels: {app: geth}
     spec:
+      enableServiceLinks: false
       containers:
         - name: geth
           image: ethereum/client-go:v1.16.5
