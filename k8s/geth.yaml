@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chainops
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geth
+  namespace: chainops
+spec:
+  selector:
+    app: geth
+  ports:
+    - {name: rpc, port: 8545, targetPort: 8545}
+    - {name: metrics, port: 6060, targetPort: 6060}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: geth
+  namespace: chainops
+spec:
+  serviceName: geth
+  replicas: 1
+  selector:
+    matchLabels: {app: geth}
+  template:
+    metadata:
+      labels: {app: geth}
+    spec:
+      containers:
+        - name: geth
+          image: ethereum/client-go:v1.16.5
+          imagePullPolicy: IfNotPresent
+          args:
+            - --dev
+            - --dev.period=3
+            - --datadir=/data
+            - --http
+            - --http.addr=0.0.0.0
+            - --http.port=8545
+            - --http.api=eth,net,web3
+            - --http.vhosts=*
+            - --http.corsdomain=*
+            - --metrics
+            - --metrics.addr=0.0.0.0
+            - --metrics.port=6060
+            - --ipcdisable
+            - --nodiscover
+          ports:
+            - {containerPort: 8545, name: rpc}
+            - {containerPort: 6060, name: metrics}
+          startupProbe:
+            tcpSocket: {port: 8545}
+            periodSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket: {port: 8545}
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: {port: 8545}
+            periodSeconds: 20
+            failureThreshold: 3
+          resources:
+            requests: {cpu: 100m, memory: 512Mi}
+            limits: {cpu: '1', memory: 2Gi}
+          volumeMounts:
+            - {name: chain-data, mountPath: /data}
+  volumeClaimTemplates:
+    - metadata:
+        name: chain-data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: {storage: 4Gi}

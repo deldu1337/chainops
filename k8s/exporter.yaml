@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rpc-exporter
+  namespace: chainops
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: rpc-exporter}
+  template:
+    metadata:
+      labels: {app: rpc-exporter}
+    spec:
+      containers:
+        - name: exporter
+          image: chainops-exporter:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: RPC_URL, value: 'http://geth.chainops.svc.cluster.local:8545'}
+          ports:
+            - {containerPort: 9108, name: metrics}
+          readinessProbe:
+            httpGet: {path: /healthz, port: 9108}
+            initialDelaySeconds: 3
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 200m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rpc-exporter
+  namespace: chainops
+spec:
+  selector: {app: rpc-exporter}
+  ports:
+    - {name: metrics, port: 9108, targetPort: 9108}

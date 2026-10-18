@@ -1,0 +1,21 @@
+name: CI
+on:
+  push:
+  pull_request:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Python syntax
+        run: python -m py_compile exporter/main.py
+      - name: Install PyYAML
+        run: pip install pyyaml
+      - name: Validate YAML syntax
+        run: |
+          python - <<'PY'
+          import glob, yaml
+          for path in glob.glob('k8s/*.yaml') + glob.glob('monitoring/*.yaml') + glob.glob('gitops/*.yaml'):
+              with open(path) as f: list(yaml.safe_load_all(f))
+              print('OK', path)
+          PY
